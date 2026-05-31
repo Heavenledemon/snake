@@ -8,7 +8,14 @@ export interface GestureEventType {
 export interface Coordinate {
     x: number,
     y: number
+}
 
+export interface FoodItem extends Coordinate {
+    id: number;
+    emoji: string;
+    points: number;
+    glowColor: string;
+    isGolden?: boolean;
 }
 
 export enum Direction {
@@ -16,4 +23,9 @@ export enum Direction {
     Left,
     Up,
     Down
+}
+
+export interface Obstacle extends Coordinate {
+    width: number;
+    height: number;
 }

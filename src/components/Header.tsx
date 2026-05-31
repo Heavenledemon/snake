@@ -9,30 +9,43 @@ interface HeaderProps {
   isPaused: boolean;
   onPausePress: () => void;
   onRestartPress: () => void;
+  onQuitPress: () => void;
 }
 
-export default function Header({ score, isPaused, onPausePress, onRestartPress }: HeaderProps): JSX.Element {
+export default function Header({ score, isPaused, onPausePress, onRestartPress, onQuitPress }: HeaderProps): JSX.Element {
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-      {/* Restart Button */}
-      <TouchableOpacity style={styles.button} onPress={onRestartPress} activeOpacity={0.7}>
-        <FontAwesome name="refresh" size={18} color={Colors.neonGreen} />
-      </TouchableOpacity>
+      {/* Left Actions */}
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        {/* Quit / Home Button */}
+        <TouchableOpacity 
+          style={[styles.button, { borderColor: Colors.electricMagenta, shadowColor: Colors.electricMagenta, backgroundColor: 'rgba(255, 0, 96, 0.08)' }]} 
+          onPress={onQuitPress} 
+          activeOpacity={0.7}
+        >
+          <Ionicons name="home-outline" size={18} color={Colors.electricMagenta} />
+        </TouchableOpacity>
+
+        {/* Restart Button */}
+        <TouchableOpacity style={styles.button} onPress={onRestartPress} activeOpacity={0.7}>
+          <Ionicons name="reload-outline" size={18} color={Colors.cyberCyan} />
+        </TouchableOpacity>
+      </View>
 
       {/* Score Section */}
       <View style={styles.scoreContainer}>
-        <Text style={styles.scoreLabel}>SCORE</Text>
+        <Text style={styles.scoreLabel}>CYBER SCORE</Text>
         <Text style={styles.scoreValue}>{score}</Text>
       </View>
 
       {/* Pause Button */}
       <TouchableOpacity style={styles.button} onPress={onPausePress} activeOpacity={0.7}>
         {isPaused ? (
-          <Ionicons name="play" size={20} color={Colors.neonGreen} />
+          <Ionicons name="play-outline" size={20} color={Colors.cyberCyan} />
         ) : (
-          <Ionicons name="pause" size={20} color={Colors.neonGreen} />
+          <Ionicons name="pause-outline" size={20} color={Colors.cyberCyan} />
         )}
       </TouchableOpacity>
     </View>
@@ -45,48 +58,42 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingBottom: 14,
+    paddingBottom: 16,
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.boardBorder,
-    shadowColor: Colors.neonGreen,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
   },
   scoreContainer: {
     alignItems: "center",
   },
   scoreLabel: {
-    fontSize: 10,
-    fontWeight: "800",
+    fontSize: 9,
+    fontWeight: "900",
     color: Colors.textSecondary,
-    letterSpacing: 3,
+    letterSpacing: 4,
     marginBottom: 2,
   },
   scoreValue: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "900",
-    color: Colors.neonGreen,
+    color: Colors.cyberCyan,
     letterSpacing: 2,
-    shadowColor: Colors.neonGreen,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
+    textShadowColor: Colors.cyberCyanGlow,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   button: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.buttonBg,
-    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.buttonBorder,
-    shadowColor: Colors.neonGreen,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: Colors.cyberCyan,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
 });
