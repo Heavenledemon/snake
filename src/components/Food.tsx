@@ -1,12 +1,12 @@
 import { StyleSheet, View, Text, Animated, Easing } from "react-native";
 import { FoodItem } from "../types/types";
-import { JSX, useRef, useEffect } from "react";
+import { JSX, useRef, useEffect, memo } from "react";
 
 interface FoodProps {
     item: FoodItem;
 }
 
-export default function Food({ item }: FoodProps): JSX.Element {
+const FoodComponent = ({ item }: FoodProps): JSX.Element => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     useEffect(() => {
@@ -48,6 +48,12 @@ export default function Food({ item }: FoodProps): JSX.Element {
         </View>
     );
 }
+
+export default memo(FoodComponent, (prevProps, nextProps) => {
+    return prevProps.item.id === nextProps.item.id && 
+           prevProps.item.emoji === nextProps.item.emoji &&
+           prevProps.item.points === nextProps.item.points;
+});
 
 const styles = StyleSheet.create({
     wrapper: {

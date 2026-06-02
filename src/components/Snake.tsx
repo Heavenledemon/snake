@@ -1,4 +1,4 @@
-import { Fragment, JSX } from 'react';
+import { Fragment, JSX, memo } from 'react';
 import { Coordinate } from '../types/types';
 import { View } from 'react-native';
 import { Colors } from '../styles/colors';
@@ -14,8 +14,8 @@ const STEP = 10;
 const BODY_SIZE = 26;
 const HEAD_SIZE = 34;   // sleek, cute glowing head
 
-// Cute Glowing Neon Head
-function NeonHead({ size, comboActive }: { size: number; comboActive?: boolean }) {
+// Cute Glowing Neon Head - memoized
+const NeonHead = memo(({ size, comboActive }: { size: number; comboActive?: boolean }) => {
     const half = size / 2;
 
     return (
@@ -118,9 +118,9 @@ function NeonHead({ size, comboActive }: { size: number; comboActive?: boolean }
             </View>
         </View>
     );
-}
+});
 
-export default function Snake({ snake, isGhostMode, score = 0, comboActive = false }: SnakeProps): JSX.Element {
+export default memo(function Snake({ snake, isGhostMode, score = 0, comboActive = false }: SnakeProps): JSX.Element {
     const total = snake.length;
 
     // Dynamic Thickness Size Scaling as the snake grows
@@ -233,4 +233,4 @@ export default function Snake({ snake, isGhostMode, score = 0, comboActive = fal
             })}
         </Fragment>
     );
-}
+});
