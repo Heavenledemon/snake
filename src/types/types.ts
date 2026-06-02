@@ -16,6 +16,7 @@ export interface FoodItem extends Coordinate {
     points: number;
     glowColor: string;
     isGolden?: boolean;
+    powerUpType?: 'warp' | 'magnet' | 'shield';
 }
 
 export enum Direction {

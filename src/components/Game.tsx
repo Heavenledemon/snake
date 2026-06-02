@@ -1,5 +1,5 @@
 import * as React from "react";
-import { JSX, useState, useEffect, useRef, useCallback } from "react";
+import { JSX, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StyleSheet, View, Text, TouchableOpacity, LayoutChangeEvent, Animated } from "react-native";
 import { Colors } from "../styles/colors";
@@ -56,14 +56,30 @@ export default function Game(): JSX.Element {
   // Screen Shake & Popups
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const [popups, setPopups] = useState<{ id: number; text: string; x: number; y: number; isGolden?: boolean }[]>([]);
+  
+  // Use refs for values accessed in game loop to avoid closure staleness
+  const snakeRef = useRef(snake);
+  const dirVecRef = useRef(dirVec);
+  const scoreRef = useRef(score);
+  const isGhostModeRef = useRef(isGhostMode);
+  const foodsRef = useRef(foods);
+  const currentMazeIdxRef = useRef(currentMazeIdx);
 
-  const triggerScreenShake = () => {
+  // Sync refs with state
+  useEffect(() => { snakeRef.current = snake; }, [snake]);
+  useEffect(() => { dirVecRef.current = dirVec; }, [dirVec]);
+  useEffect(() => { scoreRef.current = score; }, [score]);
+  useEffect(() => { isGhostModeRef.current = isGhostMode; }, [isGhostMode]);
+  useEffect(() => { foodsRef.current = foods; }, [foods]);
+  useEffect(() => { currentMazeIdxRef.current = currentMazeIdx; }, [currentMazeIdx]);
+
+  const triggerScreenShake = useCallback(() => {
     Animated.sequence([
       Animated.timing(shakeAnim, { toValue: 3, duration: 25, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: -3, duration: 25, useNativeDriver: true }),
       Animated.timing(shakeAnim, { toValue: 0, duration: 25, useNativeDriver: true }),
     ]).start();
-  };
+  }, []);
 
   const onBoardLayout = useCallback((e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
@@ -97,43 +113,54 @@ export default function Game(): JSX.Element {
   useEffect(() => {
     if (!isGameOver && gameBounds) {
       const intervalId = setInterval(() => {
-        !isPaused && !showMazeShift && moveSnake();
+        if (!isPaused && !showMazeShift) {
+          moveSnake();
+        }
       }, MOVE_INTERVAL);
       return () => clearInterval(intervalId);
     }
-  }, [snake, isGameOver, isPaused, gameBounds, dirVec, isGhostMode, showMazeShift]);
+  }, [isGameOver, isPaused, gameBounds, showMazeShift]);
 
-  const moveSnake = () => {
+  const moveSnake = useCallback(() => {
     const bounds = gameBoundsRef.current;
     if (!bounds) return;
 
+    // Use refs for latest values
+    const currentSnake = snakeRef.current;
+    const currentDirVec = dirVecRef.current;
+    const currentScore = scoreRef.current;
+    const currentIsGhostMode = isGhostModeRef.current;
+    const currentFoods = foodsRef.current;
+    const currentMazeIndex = currentMazeIdxRef.current;
+    const currentMazeLocal = MAZES[currentMazeIndex];
+
     // Dynamic Speed Ramping
     const baseSpeed = 0.45;
-    const SPEED = baseSpeed + Math.min(score * 0.0012, 0.40);
+    const SPEED = baseSpeed + Math.min(currentScore * 0.0012, 0.40);
     const spacing = 1.3;
 
-    const snakeHead = snake[0];
+    const snakeHead = currentSnake[0];
     const newHead = {
-      x: snakeHead.x + dirVec.dx * SPEED,
-      y: snakeHead.y + dirVec.dy * SPEED,
+      x: snakeHead.x + currentDirVec.dx * SPEED,
+      y: snakeHead.y + currentDirVec.dy * SPEED,
     };
 
-    if (checkGameOver(newHead, bounds, currentMaze.obstacles)) {
-      if (isGhostMode) {
+    if (checkGameOver(newHead, bounds, currentMazeLocal.obstacles)) {
+      if (currentIsGhostMode) {
         if (newHead.x < bounds.xMin) newHead.x = bounds.xMax;
         else if (newHead.x > bounds.xMax) newHead.x = bounds.xMin;
         if (newHead.y < bounds.yMin) newHead.y = bounds.yMax;
         else if (newHead.y > bounds.yMax) newHead.y = bounds.yMin;
       } else {
         setIsGameOver(true);
-        setHighScore((prev) => Math.max(prev, score));
+        setHighScore((prev) => Math.max(prev, currentScore));
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         triggerScreenShake();
         return;
       }
     }
 
-    const newSegments = [...snake];
+    const newSegments = [...currentSnake];
     newSegments[0] = newHead;
 
     for (let i = 1; i < newSegments.length; i++) {
@@ -148,10 +175,10 @@ export default function Game(): JSX.Element {
       }
     }
 
-    const eatenIndex = foods.findIndex((f) => checkEatsFood(newHead, f, 2.5));
+    const eatenIndex = currentFoods.findIndex((f) => checkEatsFood(newHead, f, 2.5));
     if (eatenIndex !== -1) {
-      const eaten = foods[eatenIndex];
-      const newFoods = [...foods];
+      const eaten = currentFoods[eatenIndex];
+      const newFoods = [...currentFoods];
       newFoods[eatenIndex] = randomFoodPosition(bounds);
       setFoods(newFoods);
 
@@ -196,15 +223,15 @@ export default function Game(): JSX.Element {
       setPopups((prev) => [...prev, newPopup]);
       setTimeout(() => setPopups((prev) => prev.filter((p) => p.id !== newPopup.id)), 750);
 
-      const newScore = score + scoreGain;
+      const newScore = currentScore + scoreGain;
       setSnake([...newSegments, newTail]);
       setScore(newScore);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       // Dynamic Maze Shift Logic
-      const nextMaze = MAZES[currentMazeIdx + 1];
+      const nextMaze = MAZES[currentMazeIndex + 1];
       if (nextMaze && newScore >= nextMaze.threshold) {
-        setCurrentMazeIdx(currentMazeIdx + 1);
+        setCurrentMazeIdx(currentMazeIndex + 1);
         setShowMazeShift(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setTimeout(() => setShowMazeShift(false), 1500);
@@ -212,7 +239,7 @@ export default function Game(): JSX.Element {
     } else {
       setSnake(newSegments);
     }
-  };
+  }, [triggerScreenShake]);
 
   const handleGesture = (event: GestureEventType) => {
     const { translationX, translationY } = event.nativeEvent;
